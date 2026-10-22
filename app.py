@@ -6,11 +6,19 @@ import json
 app = Flask(__name__)
 API_KEY = os.environ.get("API_KEY", "changeme")
 
-YTDLP_BASE = [
-    "yt-dlp",
-    "--cookies", "/app/cookies.txt",
-    "--extractor-args", "youtube:player_client=web,default",
-    "--add-header", "X-Youtube-Identity-Token:",
+YTDLP_BASE = ["yt-dlp"]
+
+COOKIES_FILE = os.environ.get("COOKIES_FILE", "").strip()
+if COOKIES_FILE:
+    import shutil
+    import tempfile
+
+    # yt-dlp updates cookie files; keep the Render secret untouched.
+    _COOKIE_DIR = tempfile.TemporaryDirectory(prefix="yt-dlp-cookies-")
+    _cookie_path = os.path.join(_COOKIE_DIR.name, "cookies.txt")
+    shutil.copyfile(COOKIES_FILE, _cookie_path)
+    os.chmod(_cookie_path, 0o600)
+    YTDLP_BASE += ["--cookies", _cookie_path]
 ]
 
 def auth(req):
